@@ -1,7 +1,6 @@
 #include "SparkFunLSM303C.h"
 #include "stdint.h"
 
-
 // Public methods
 status_t LSM303C::begin()
 {
@@ -55,43 +54,44 @@ float LSM303C::readMagZ()
 
 float LSM303C::readAccel(AXIS_t dir)
 {
-  AxesRaw_t data;
   uint8_t flag_ACC_STATUS_FLAGS;
   status_t response = ACC_Status_Flags(flag_ACC_STATUS_FLAGS);
-  float ret = NAN;
   
   if (response != IMU_SUCCESS)
   {
     Serial.println("\nError: Accelerometer isn't working!!!");
-    ret = NAN;
+    return NAN;
   }
+  
   // Check for new data in the status flags with a mask
-  else if (flag_ACC_STATUS_FLAGS & ACC_ZYX_NEW_DATA_AVAILABLE)
+  if (flag_ACC_STATUS_FLAGS & ACC_ZYX_NEW_DATA_AVAILABLE)
   {
-    response = ACC_GetAccRaw(data);
-    debug_println("Got raw data");
-    //convert from LSB to mg
-    switch (dir)
-    {
-    case xAxis:
-      debug_println("Reading accel in x");
-      ret = data.xAxis * SENSITIVITY_ACC;
-      break;
-    case yAxis:
-      debug_println("Reading accel in y");
-      ret = data.yAxis * SENSITIVITY_ACC;
-      break;
-    case zAxis:
-      debug_println("Reading accel in z");
-      ret = data.zAxis * SENSITIVITY_ACC;
-      break;
-    default:
-      Serial.println("Fell through...");
-      ret = NAN;
-    }
+    response = ACC_GetAccRaw(accelData);
+    debug_println("Got fresh raw data");
   }
+  //convert from LSB to mg
+  switch (dir)
+  {
+  case xAxis:
+    debug_println("Reading accel in x");
+    return accelData.xAxis * SENSITIVITY_ACC;
+    break;
+  case yAxis:
+    debug_println("Reading accel in y");
+    return accelData.yAxis * SENSITIVITY_ACC;
+    break;
+  case zAxis:
+    debug_println("Reading accel in z");
+    return accelData.zAxis * SENSITIVITY_ACC;
+    break;
+  default:
+    Serial.println("Fell through...");
+    return NAN;
+  }
+
+  // Should never get here
   debug_println("Returning NAN");
-  return ret;
+  return NAN;
 }
 
 float LSM303C::readAccelX()

@@ -21,7 +21,7 @@ class LSM303C : public SparkFunIMU
       int16_t zAxis;
     } AxesRaw_t;
 
-    //AxesRaw_t accelData = {NAN, NAN, NAN};
+    AxesRaw_t accelData = {NAN, NAN, NAN};
 
     // The LSM303C functions over both I2C or SPI. This library supports both.
     // Interface mode used must be set!
