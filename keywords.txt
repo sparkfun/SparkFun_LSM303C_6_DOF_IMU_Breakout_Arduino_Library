@@ -1,0 +1,31 @@
+################################################################################
+#       Syntax Coloring Map for SparkFun MAX31855K Thermocouple Breakout       #
+################################################################################
+
+################################################################################
+# Datatypes (KEYWORD1)
+################################################################################
+
+status_t	KEYWORD1
+SparkFunIMU	KEYWORD1
+
+################################################################################
+# Methods and Functions (KEYWORD2)
+################################################################################
+
+begin	KEYWORD2
+readGyroX	KEYWORD2
+readGyroY	KEYWORD2
+readGyroZ	KEYWORD2
+readAccelX	KEYWORD2
+readAccelY	KEYWORD2
+readAccelZ	KEYWORD2
+readMagX	KEYWORD2
+readMagY	KEYWORD2
+readMagZ	KEYWORD2
+readTempF	KEYWORD2
+readTempC	KEYWORD2
+
+################################################################################
+# Constants (LITERAL1)
+################################################################################
