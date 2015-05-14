@@ -6,7 +6,6 @@
 #include "SparkFunIMU.h"
 #include "LSM303CTypes.h"
 #include "DebugMacros.h"
-//#include "stdint.h"
 
 #define SENSITIVITY_ACC     -0.06103515625      //LSB/mg
 #define SENSITIVITY_MAG      0.00048828125      //LSB/Ga
@@ -14,27 +13,13 @@
 class LSM303C : public SparkFunIMU
 {
   protected:
-    typedef struct
-    {
-      int16_t xAxis;
-      int16_t yAxis;
-      int16_t zAxis;
-    } AxesRaw_t;
-
+    // Variables to store the most recently read raw data from sensor
     AxesRaw_t accelData = {NAN, NAN, NAN};
+    AxesRaw_t   magData = {NAN, NAN, NAN};
 
     // The LSM303C functions over both I2C or SPI. This library supports both.
     // Interface mode used must be set!
-    typedef enum
-    {
-      MODE_SPI,
-      MODE_I2C,
-    } interface_mode;
     interface_mode interfaceMode = MODE_I2C;  // Set a default...
-
-    // These two funcs are only for demo
-    uint8_t readAccelWhoAmI() { return 0x41; }
-    uint8_t readMagWhoAmI()   { return 0x3E; }
 
     // Methods required to get device up and running
     status_t MAG_SetODR(MAG_DO_t);
@@ -50,29 +35,34 @@ class LSM303C : public SparkFunIMU
 
     status_t ACC_Status_Flags(uint8_t&);
     status_t ACC_GetAccRaw(AxesRaw_t&);
-    float    readAccel(AXIS_t);
+    float    readAccel(AXIS_t); // Reads the accelerometer data from IC
 
-    status_t MAG_ReadReg(uint8_t, uint8_t&);
-    uint8_t  MAG_WriteReg(uint8_t, uint8_t);
-    status_t ACC_ReadReg(uint8_t, uint8_t&);
-    uint8_t  ACC_WriteReg(uint8_t, uint8_t);
-    uint8_t  I2C_ByteWrite(uint8_t, uint8_t, uint8_t);  
-    status_t I2C_ByteRead(uint8_t, uint8_t, uint8_t&);
+    status_t MAG_GetMagRaw(AxesRaw_t&);
+    status_t MAG_TemperatureEN(MAG_TEMP_EN_t);    
+    status_t MAG_GetTemperatureRaw(uint16_t&);
+    status_t MAG_XYZ_AxDataAvailable(MAG_XYZDA_t&);
+    float    readMag(AXIS_t);   // Reads the magnetometer data from IC
+
+    status_t MAG_ReadReg(MAG_REG_t, uint8_t&);
+    uint8_t  MAG_WriteReg(MAG_REG_t, uint8_t);
+    status_t ACC_ReadReg(ACC_REG_t, uint8_t&);
+    uint8_t  ACC_WriteReg(ACC_REG_t, uint8_t);
+    uint8_t  I2C_ByteWrite(I2C_ADDR_t, uint8_t, uint8_t);  
+    status_t I2C_ByteRead(I2C_ADDR_t, uint8_t, uint8_t&);
 
   public:
+    // These are the only methods are the only methods the user can use w/o mods
     LSM303C() {}
-    ~LSM303C() = default;
-    status_t begin(void);
+    ~LSM303C()  =  default;
+    status_t   begin(void);
     float readAccelX(void);
     float readAccelY(void);
     float readAccelZ(void);
-    float readMagX(void);
-    float readMagY(void);
-    float readMagZ(void);
-    float readTempC(void);
-    float readTempF(void);
+    float   readMagX(void);
+    float   readMagY(void);
+    float   readMagZ(void);
+    float  readTempC(void);
+    float  readTempF(void);
 };
 
-//extern LSM303C lsm303c;
-
-#endif  // End of __EXAMPLEIMU_H__ definition check
+#endif

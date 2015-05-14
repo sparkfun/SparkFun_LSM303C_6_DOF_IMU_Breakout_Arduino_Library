@@ -2,6 +2,8 @@
 #ifndef __DEBUGMACROS_H__
 #define __DEBUGMACROS_H__
 
+static const char EMPTY[] = ""; 
+
 #define DEBUG 0
 #define debug_print(msg, ...) \
   do { if (DEBUG) { Serial.print(__func__); Serial.print("::"); \

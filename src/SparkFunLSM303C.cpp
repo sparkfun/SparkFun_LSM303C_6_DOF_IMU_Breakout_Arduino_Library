@@ -1,6 +1,8 @@
 #include "SparkFunLSM303C.h"
 #include "stdint.h"
 
+#define DEBUG 0
+
 // Public methods
 status_t LSM303C::begin()
 {
@@ -29,69 +31,22 @@ status_t LSM303C::begin()
   // Initialize accelerometer output data rate to 100 Hz (turn on device)
   successes += ACC_SetODR(ACC_ODR_100_Hz);
 
-  if (successes == IMU_SUCCESS)
-  {
-    return IMU_SUCCESS;
-  }
-
-  return IMU_HW_ERROR;
+  return (successes == IMU_SUCCESS) ? IMU_SUCCESS : IMU_HW_ERROR;
 }
 
 float LSM303C::readMagX()
 {
-  return 12.345;
+  return readMag(xAxis);
 }
 
 float LSM303C::readMagY()
 {
-  return -1.0;
+  return readMag(yAxis);
 }
 
 float LSM303C::readMagZ()
 {
-  return -1.0;
-}
-
-float LSM303C::readAccel(AXIS_t dir)
-{
-  uint8_t flag_ACC_STATUS_FLAGS;
-  status_t response = ACC_Status_Flags(flag_ACC_STATUS_FLAGS);
-  
-  if (response != IMU_SUCCESS)
-  {
-    Serial.println("\nError: Accelerometer isn't working!!!");
-    return NAN;
-  }
-  
-  // Check for new data in the status flags with a mask
-  if (flag_ACC_STATUS_FLAGS & ACC_ZYX_NEW_DATA_AVAILABLE)
-  {
-    response = ACC_GetAccRaw(accelData);
-    debug_println("Got fresh raw data");
-  }
-  //convert from LSB to mg
-  switch (dir)
-  {
-  case xAxis:
-    debug_println("Reading accel in x");
-    return accelData.xAxis * SENSITIVITY_ACC;
-    break;
-  case yAxis:
-    debug_println("Reading accel in y");
-    return accelData.yAxis * SENSITIVITY_ACC;
-    break;
-  case zAxis:
-    debug_println("Reading accel in z");
-    return accelData.zAxis * SENSITIVITY_ACC;
-    break;
-  default:
-    Serial.println("Fell through...");
-    return NAN;
-  }
-
-  // Should never get here
-  debug_println("Returning NAN");
-  return NAN;
+  return readMag(zAxis);
 }
 
 float LSM303C::readAccelX()
@@ -111,20 +66,168 @@ float LSM303C::readAccelZ()
 
 float LSM303C::readTempC()
 {
-  return 25.45;
+  uint16_t temperature;
+  MAG_TemperatureEN(MAG_TEMP_EN_ENABLE);
+  MAG_GetTemperatureRaw(temperature);
+  return (float)temperature;
 }
 
 float LSM303C::readTempF()
 {
-  return 25.45;
+  return( (readTempC() * 9.0 / 5.0) + 32.0);
 }
 
 ////// Protected methods
 
+float LSM303C::readAccel(AXIS_t dir)
+{
+  uint8_t flag_ACC_STATUS_FLAGS;
+  status_t response = ACC_Status_Flags(flag_ACC_STATUS_FLAGS);
+  
+  if (response != IMU_SUCCESS)
+  {
+    Serial.println("\nError: Accel isn't working!");
+    return NAN;
+  }
+  
+  // Check for new data in the status flags with a mask
+  if (flag_ACC_STATUS_FLAGS & ACC_ZYX_NEW_DATA_AVAILABLE)
+  {
+    response = ACC_GetAccRaw(accelData);
+    debug_println("Fresh raw data");
+  }
+  //convert from LSB to mg
+  switch (dir)
+  {
+  case xAxis:
+    return accelData.xAxis * SENSITIVITY_ACC;
+    break;
+  case yAxis:
+    return accelData.yAxis * SENSITIVITY_ACC;
+    break;
+  case zAxis:
+    return accelData.zAxis * SENSITIVITY_ACC;
+    break;
+  default:
+    return NAN;
+  }
+
+  // Should never get here
+  debug_println("Returning NAN");
+  return NAN;
+}
+
+float LSM303C::readMag(AXIS_t dir)
+{
+  MAG_XYZDA_t flag_MAG_XYZDA;
+  status_t response = MAG_XYZ_AxDataAvailable(flag_MAG_XYZDA);
+  
+  if (response != IMU_SUCCESS)
+  {
+    Serial.println("\nError: Magnetometer isn't working!!!");
+    return NAN;
+  }
+  
+  // Check for new data in the status flags with a mask
+  if (flag_MAG_XYZDA & MAG_XYZDA_YES)
+  {
+    response = MAG_GetMagRaw(magData);
+    debug_println("Fresh raw data");
+  }
+  //convert from LSB to Gauss
+  switch (dir)
+  {
+  case xAxis:
+    return magData.xAxis * SENSITIVITY_MAG;
+    break;
+  case yAxis:
+    return magData.yAxis * SENSITIVITY_MAG;
+    break;
+  case zAxis:
+    return magData.zAxis * SENSITIVITY_MAG;
+    break;
+  default:
+    return NAN;
+  }
+
+  // Should never get here
+  debug_println("Returning NAN");
+  return NAN;
+}
+
+status_t LSM303C::MAG_GetTemperatureRaw(uint16_t& buff)
+{
+  uint8_t valueL;
+  uint8_t valueH;
+
+  // temperature = (((int16_t) temp[1] << 12) | temp[0] << 4 ) >> 4;
+  // Temperature is a 12-bit signed integer
+	
+	if( MAG_ReadReg(MAG_TEMP_OUT_L, valueL) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  if( MAG_ReadReg(MAG_TEMP_OUT_H, valueH) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+	buff = (int16_t)( (valueH << 8) | valueL );
+
+  return IMU_SUCCESS;  
+}
+
+status_t LSM303C::MAG_GetMagRaw(AxesRaw_t& buff)
+{
+  debug_print(EMPTY);
+  uint8_t valueL;
+  uint8_t valueH;
+  
+  debug_println("& was false");
+  if( MAG_ReadReg(MAG_OUTX_L, valueL) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  if( MAG_ReadReg(MAG_OUTX_H, valueH) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  buff.xAxis = (int16_t)( (valueH << 8) | valueL );
+  
+  if( MAG_ReadReg(MAG_OUTY_L, valueL) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  if( MAG_ReadReg(MAG_OUTY_H, valueH) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  buff.yAxis = (int16_t)( (valueH << 8) | valueL );
+  
+  if( MAG_ReadReg(MAG_OUTZ_L, valueL) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  if( MAG_ReadReg(MAG_OUTZ_H, valueH) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  buff.zAxis = (int16_t)( (valueH << 8) | valueL );
+
+  return IMU_SUCCESS;
+}
+
 // Methods required to get device up and running
 status_t LSM303C::MAG_SetODR(MAG_DO_t val)
 {
-  debug_println("Setting mag ODR");
+  debug_print(EMPTY);
   uint8_t value;
 
   if(MAG_ReadReg(MAG_CTRL_REG1, value))
@@ -146,7 +249,7 @@ status_t LSM303C::MAG_SetODR(MAG_DO_t val)
 
 status_t LSM303C::MAG_SetFullScale(MAG_FS_t val)
 {
-  debug_println("Setting mag full scale");
+  debug_print(EMPTY);
   uint8_t value;
 
   if ( MAG_ReadReg(MAG_CTRL_REG2, value) )
@@ -167,7 +270,7 @@ status_t LSM303C::MAG_SetFullScale(MAG_FS_t val)
 
 status_t LSM303C::MAG_BlockDataUpdate(MAG_BDU_t val)
 {
-  debug_println("Setting mag block data update");
+  debug_print(EMPTY);
   uint8_t value;
 
   if ( MAG_ReadReg(MAG_CTRL_REG5, value) )
@@ -187,9 +290,23 @@ status_t LSM303C::MAG_BlockDataUpdate(MAG_BDU_t val)
   return IMU_SUCCESS;
 }
 
+status_t LSM303C::MAG_XYZ_AxDataAvailable(MAG_XYZDA_t& value)
+{
+  //uint8_t tmp = value;
+  //if ( MAG_ReadReg(MAG_STATUS_REG, tmp) )
+  if ( MAG_ReadReg(MAG_STATUS_REG, (uint8_t&)value) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  value = (MAG_XYZDA_t)((int8_t)value & (int8_t)MAG_XYZDA_YES);
+
+  return IMU_SUCCESS;
+}
+
 status_t LSM303C::MAG_XY_AxOperativeMode(MAG_OMXY_t val)
 {
-  debug_println("Setting mag XY axes operating mode");
+  debug_print(EMPTY);
 
   uint8_t value;
 
@@ -211,7 +328,7 @@ status_t LSM303C::MAG_XY_AxOperativeMode(MAG_OMXY_t val)
 
 status_t LSM303C::MAG_Z_AxOperativeMode(MAG_OMZ_t val)
 {
-  debug_println("Setting mag Z axis operating mode");
+  debug_print(EMPTY);
   uint8_t value;
 
   if ( MAG_ReadReg(MAG_CTRL_REG4, value) )
@@ -232,7 +349,7 @@ status_t LSM303C::MAG_Z_AxOperativeMode(MAG_OMZ_t val)
 
 status_t LSM303C::MAG_SetMode(MAG_MD_t val)
 {
-  debug_println("Setting mag mode");
+  debug_print(EMPTY);
   uint8_t value;
 
   if ( MAG_ReadReg(MAG_CTRL_REG3, value) )
@@ -245,7 +362,6 @@ status_t LSM303C::MAG_SetMode(MAG_MD_t val)
   value &= ~MAG_MD_POWER_DOWN_2;
   value |= val;		
 
-  debug_println("About to call MAG_WriteReg()");
   if ( MAG_WriteReg(MAG_CTRL_REG3, value) )
   {
     return IMU_HW_ERROR;
@@ -256,7 +372,7 @@ status_t LSM303C::MAG_SetMode(MAG_MD_t val)
 
 status_t LSM303C::ACC_SetFullScale(ACC_FS_t val)
 {
-  debug_println("Setting acc setting full scale");
+  debug_print(EMPTY);
   uint8_t value;
 
   if ( ACC_ReadReg(ACC_CTRL4, value) )
@@ -278,7 +394,7 @@ status_t LSM303C::ACC_SetFullScale(ACC_FS_t val)
 
 status_t LSM303C::ACC_BlockDataUpdate(ACC_BDU_t val)
 {
-  debug_println("Setting acc block data update");
+  debug_print(EMPTY);
   uint8_t value;
 
   if ( ACC_ReadReg(ACC_CTRL1, value) )
@@ -299,7 +415,7 @@ status_t LSM303C::ACC_BlockDataUpdate(ACC_BDU_t val)
 
 status_t LSM303C::ACC_EnableAxis(uint8_t val)
 {
-  debug_println("Setting acc enabling axes");
+  debug_print(EMPTY);
   uint8_t value;
 
   if ( ACC_ReadReg(ACC_CTRL1, value) )
@@ -321,7 +437,7 @@ status_t LSM303C::ACC_EnableAxis(uint8_t val)
 
 status_t LSM303C::ACC_SetODR(ACC_ODR_t val)
 {
-  debug_println("Setting acc setting ODR");
+  debug_print(EMPTY);
   uint8_t value;
 
   if ( ACC_ReadReg(ACC_CTRL1, value) )
@@ -340,19 +456,34 @@ status_t LSM303C::ACC_SetODR(ACC_ODR_t val)
   return IMU_SUCCESS;
 }
 
-status_t LSM303C::MAG_ReadReg(uint8_t reg, uint8_t& data)
+status_t LSM303C::MAG_TemperatureEN(MAG_TEMP_EN_t val){
+  uint8_t value;
+
+  if( MAG_ReadReg(MAG_CTRL_REG1, value) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  value &= ~MAG_TEMP_EN_ENABLE; //mask
+  value |= val;	
+
+  if( MAG_WriteReg(MAG_CTRL_REG1, value) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  return IMU_SUCCESS;
+}
+
+status_t LSM303C::MAG_ReadReg(MAG_REG_t reg, uint8_t& data)
 {
   debug_print("Reading register 0x");
   debug_printlns(reg, HEX);
-  status_t ret;
+  status_t ret = IMU_GENERIC_ERROR;
     
   if (interfaceMode == MODE_I2C)
   {
     ret = I2C_ByteRead(MAG_I2C_ADDR, reg, data);
-    #ifdef DEBUG
-      if (ret != IMU_SUCCESS)
-    #endif
-      debug_println("I2C read failed");
   }
   else if (interfaceMode == MODE_SPI)
   {
@@ -362,15 +493,15 @@ status_t LSM303C::MAG_ReadReg(uint8_t reg, uint8_t& data)
   }
   else
   {
-    // TODO: Finish
-    ret = IMU_GENERIC_ERROR; // interfaceMode not set valid value (not worried)
+    ret = IMU_GENERIC_ERROR; // Shouldn't get here
   }
 
   return ret;
 }
 
-uint8_t  LSM303C::MAG_WriteReg(uint8_t reg, uint8_t data)
+uint8_t  LSM303C::MAG_WriteReg(MAG_REG_t reg, uint8_t data)
 {
+  debug_print(EMPTY);
   uint8_t ret;
     
   if (interfaceMode == MODE_I2C)
@@ -391,7 +522,7 @@ uint8_t  LSM303C::MAG_WriteReg(uint8_t reg, uint8_t data)
   return ret;
 }
 
-status_t LSM303C::ACC_ReadReg(uint8_t reg, uint8_t& data)
+status_t LSM303C::ACC_ReadReg(ACC_REG_t reg, uint8_t& data)
 {
   debug_print("Reading address 0x");
   debug_printlns(reg, HEX);
@@ -399,10 +530,7 @@ status_t LSM303C::ACC_ReadReg(uint8_t reg, uint8_t& data)
     
   if (interfaceMode == MODE_I2C)
   {
-    // TODO: looks like this call is failing
     ret = I2C_ByteRead(ACC_I2C_ADDR, reg, data);
-    debug_print("Read: 0x");
-    debug_printlns(ret, HEX);
   }
   else if (interfaceMode == MODE_SPI)
   {
@@ -418,7 +546,7 @@ status_t LSM303C::ACC_ReadReg(uint8_t reg, uint8_t& data)
   return ret;
 }
 
-uint8_t  LSM303C::ACC_WriteReg(uint8_t reg, uint8_t data)
+uint8_t  LSM303C::ACC_WriteReg(ACC_REG_t reg, uint8_t data)
 {
   uint8_t ret;
     
@@ -440,9 +568,10 @@ uint8_t  LSM303C::ACC_WriteReg(uint8_t reg, uint8_t data)
   return ret;
 }
 
-uint8_t  LSM303C::I2C_ByteWrite(uint8_t slaveAddress, uint8_t reg, uint8_t data)
+uint8_t  LSM303C::I2C_ByteWrite(I2C_ADDR_t slaveAddress, uint8_t reg,
+    uint8_t data)
 {
-  uint8_t ret;
+  uint8_t ret = IMU_GENERIC_ERROR;
   Wire.beginTransmission(slaveAddress);  // Initialize the Tx buffer
   // returns num bytes written
   if (Wire.write(reg))
@@ -452,29 +581,33 @@ uint8_t  LSM303C::I2C_ByteWrite(uint8_t slaveAddress, uint8_t reg, uint8_t data)
     {
       debug_print("Wrote: 0x");
       debug_printlns(data, HEX);
-      if (Wire.endTransmission())
+      switch (Wire.endTransmission())
       {
-        ret = 0;
-      }
-      else
-      {
-        // TODO: fix return types
-        ret = 0;
+      case 0:
+        ret = IMU_SUCCESS;
+        break;
+      case 1: // Data too long to fit in transmit buffer
+      case 2: // Received NACK on transmit of address
+      case 3: // Received NACK on transmit of data
+      case 4: // Other Error
+      default:
+        ret = IMU_HW_ERROR;
       }
     }
     else
     {
-      ret = 0;
+      ret = IMU_HW_ERROR;
     }
   }
   else
   {
-    ret = 0;
+    ret = IMU_HW_ERROR;
   }
   return ret;
 }
 
-status_t LSM303C::I2C_ByteRead(uint8_t slaveAddress, uint8_t reg, uint8_t& data)
+status_t LSM303C::I2C_ByteRead(I2C_ADDR_t slaveAddress, uint8_t reg,
+    uint8_t& data)
 {
   status_t ret = IMU_GENERIC_ERROR;
   debug_print("Reading from I2C address: 0x");
@@ -496,8 +629,6 @@ status_t LSM303C::I2C_ByteRead(uint8_t slaveAddress, uint8_t reg, uint8_t& data)
     }
     else if (Wire.requestFrom(slaveAddress, 1))
     {
-      debug_print("Data before read: 0x");
-      debug_printlns(data, HEX);
       data = Wire.read();
       debug_print("Read: 0x");
       debug_printlns(data, HEX);
@@ -518,7 +649,7 @@ status_t LSM303C::I2C_ByteRead(uint8_t slaveAddress, uint8_t reg, uint8_t& data)
 
 status_t LSM303C::ACC_Status_Flags(uint8_t& val)
 {
-  debug_println("Getting acc status");
+  debug_println("Getting accel status");
   if( ACC_ReadReg(ACC_STATUS, val) )
   {
     return IMU_HW_ERROR;
@@ -570,7 +701,3 @@ status_t LSM303C::ACC_GetAccRaw(AxesRaw_t& buff)
 
   return IMU_SUCCESS;
 }
-
-// Preinstantiate Objects //////////////////////////////////////////////////////
-
-//LSM303C lsm303c;

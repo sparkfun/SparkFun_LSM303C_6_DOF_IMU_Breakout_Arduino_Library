@@ -2,72 +2,104 @@
 #ifndef __LSM303C_TYPES_H__
 #define __LSM303C_TYPES_H__
 
-#define   ACC_I2C_ADDR    0x1D
-#define   MAG_I2C_ADDR    0x1E
-
 ////////////////////////////////////
 // LSM303C Magnetometer Registers //
 ////////////////////////////////////
-#define   MAG_WHO_AM_I    0x0F
-#define   MAG_CTRL_REG1   0x20
-#define   MAG_CTRL_REG2   0x21
-#define   MAG_CTRL_REG3   0x22
-#define   MAG_CTRL_REG4   0x23
-#define   MAG_CTRL_REG5   0x24
-#define   MAG_STATUS_REG  0x27
-#define   MAG_OUTX_L      0x28
-#define   MAG_OUTX_H      0x29
-#define   MAG_OUTY_L      0x2A
-#define   MAG_OUTY_H      0x2B
-#define   MAG_OUTZ_L      0x2C
-#define   MAG_OUTZ_H      0x2D
-#define   MAG_TEMP_OUT_L  0x2E
-#define   MAG_TEMP_OUT_H  0x2F
-#define   MAG_INT_CFG     0x30
-#define   MAG_INT_SRC     0x31
-#define   MAG_INT_THS_L   0x32
-#define   MAG_INT_THS_H   0x33
+typedef enum
+{
+  MAG_WHO_AM_I   = 0x0F,
+  MAG_CTRL_REG1  = 0x20,
+  MAG_CTRL_REG2  = 0x21,
+  MAG_CTRL_REG3  = 0x22,
+  MAG_CTRL_REG4  = 0x23,
+  MAG_CTRL_REG5  = 0x24,
+  MAG_STATUS_REG = 0x27,
+  MAG_OUTX_L     = 0x28,
+  MAG_OUTX_H     = 0x29,
+  MAG_OUTY_L     = 0x2A,
+  MAG_OUTY_H     = 0x2B,
+  MAG_OUTZ_L     = 0x2C,
+  MAG_OUTZ_H     = 0x2D,
+  MAG_TEMP_OUT_L = 0x2E,
+  MAG_TEMP_OUT_H = 0x2F,
+  MAG_INT_CFG    = 0x30,
+  MAG_INT_SRC    = 0x31,
+  MAG_INT_THS_L  = 0x32,
+  MAG_INT_THS_H  = 0x33
+} MAG_REG_t;
 
 /////////////////////////////////////
 // LSM303C Accelerometer Registers //
 /////////////////////////////////////
-#define   ACC_TEMP_L        0x0B
-#define   ACC_TEMP_H        0x0C
-#define   ACC_ACT_TSH       0x1E
-#define   ACC_ACT_DUR       0x1F
-#define   ACC_WHO_AM_I      0x0F
-#define   ACC_CTRL1         0x20
-#define   ACC_CTRL2         0x21
-#define   ACC_CTRL3         0x22
-#define   ACC_CTRL4         0x23
-#define   ACC_CTRL5         0x24
-#define   ACC_CTRL6         0x25
-#define   ACC_CTRL7         0x26
-#define   ACC_STATUS        0x27
-#define   ACC_OUT_X_L       0x28
-#define   ACC_OUT_X_H       0x29
-#define   ACC_OUT_Y_L       0x2A
-#define   ACC_OUT_Y_H       0x2B
-#define   ACC_OUT_Z_L       0x2C
-#define   ACC_OUT_Z_H       0x2D
-#define   ACC_FIFO_CTRL     0x2E
-#define   ACC_FIFO_SRC      0x2F
-#define   ACC_IG_CFG1       0x30
-#define   ACC_IG_SRC1       0x31
-#define   ACC_IG_THS_X1     0x32
-#define   ACC_IG_THS_Y1     0x33
-#define   ACC_IG_THS_Z1     0x34
-#define   ACC_IG_DUR1       0x35
-#define   ACC_IG_CFG2       0x36
-#define   ACC_IG_SRC2       0x37
-#define   ACC_IG_THS2       0x38
-#define   ACC_IG_DUR2       0x39
-#define   ACC_XL_REFERENCE  0x3A
-#define   ACC_XH_REFERENCE  0x3B
-#define   ACC_YL_REFERENCE  0x3C
-#define   ACC_YH_REFERENCE  0x3D
-#define   ACC_ZL_REFERENCE  0x3E
-#define   ACC_ZH_REFERENCE  0x3F
+typedef enum
+{
+  ACC_TEMP_L       = 0x0B,
+  ACC_TEMP_H       = 0x0C,
+  ACC_ACT_TSH      = 0x1E,
+  ACC_ACT_DUR      = 0x1F,
+  ACC_WHO_AM_I     = 0x0F,
+  ACC_CTRL1        = 0x20,
+  ACC_CTRL2        = 0x21,
+  ACC_CTRL3        = 0x22,
+  ACC_CTRL4        = 0x23,
+  ACC_CTRL5        = 0x24,
+  ACC_CTRL6        = 0x25,
+  ACC_CTRL7        = 0x26,
+  ACC_STATUS       = 0x27,
+  ACC_OUT_X_L      = 0x28,
+  ACC_OUT_X_H      = 0x29,
+  ACC_OUT_Y_L      = 0x2A,
+  ACC_OUT_Y_H      = 0x2B,
+  ACC_OUT_Z_L      = 0x2C,
+  ACC_OUT_Z_H      = 0x2D,
+  ACC_FIFO_CTRL    = 0x2E,
+  ACC_FIFO_SRC     = 0x2F,
+  ACC_IG_CFG1      = 0x30,
+  ACC_IG_SRC1      = 0x31,
+  ACC_IG_THS_X1    = 0x32,
+  ACC_IG_THS_Y1    = 0x33,
+  ACC_IG_THS_Z1    = 0x34,
+  ACC_IG_DUR1      = 0x35,
+  ACC_IG_CFG2      = 0x36,
+  ACC_IG_SRC2      = 0x37,
+  ACC_IG_THS2      = 0x38,
+  ACC_IG_DUR2      = 0x39,
+  ACC_XL_REFERENCE = 0x3A,
+  ACC_XH_REFERENCE = 0x3B,
+  ACC_YL_REFERENCE = 0x3C,
+  ACC_YH_REFERENCE = 0x3D,
+  ACC_ZL_REFERENCE = 0x3E,
+  ACC_ZH_REFERENCE = 0x3F
+} ACC_REG_t;
+
+typedef enum { 
+  MAG_TEMP_EN_DISABLE = 0x00,
+  MAG_TEMP_EN_ENABLE  = 0x80
+} MAG_TEMP_EN_t;
+
+typedef enum { 
+  MAG_XYZDA_NO  = 0x00,
+  MAG_XYZDA_YES = 0x08
+} MAG_XYZDA_t;
+
+typedef enum
+{
+  ACC_I2C_ADDR = 0x1D,
+  MAG_I2C_ADDR = 0x1E
+} I2C_ADDR_t;
+
+typedef struct
+{
+  int16_t xAxis;
+  int16_t yAxis;
+  int16_t zAxis;
+} AxesRaw_t;
+
+typedef enum
+{
+  MODE_SPI,
+  MODE_I2C,
+} interface_mode;
 
 typedef enum
 {
@@ -170,6 +202,5 @@ typedef enum
   ACC_Z_OVERRUN               = 0x40,
   ACC_ZYX_OVERRUN             = 0x80
 } ACC_STATUS_FLAGS_t;
-
 
 #endif
