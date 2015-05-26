@@ -72,12 +72,14 @@ typedef enum
   ACC_ZH_REFERENCE = 0x3F
 } ACC_REG_t;
 
-typedef enum { 
+typedef enum
+{ 
   MAG_TEMP_EN_DISABLE = 0x00,
   MAG_TEMP_EN_ENABLE  = 0x80
 } MAG_TEMP_EN_t;
 
-typedef enum { 
+typedef enum
+{ 
   MAG_XYZDA_NO  = 0x00,
   MAG_XYZDA_YES = 0x08
 } MAG_XYZDA_t;
@@ -99,7 +101,13 @@ typedef enum
 {
   MODE_SPI,
   MODE_I2C,
-} interface_mode;
+} interfaceMode_t;
+
+typedef enum
+{
+  MAG,
+  ACC
+} CHIP_t;
 
 typedef enum
 {

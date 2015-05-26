@@ -6,30 +6,81 @@
 // Public methods
 status_t LSM303C::begin()
 {
+  debug_println(EMPTY);
+  return
+  begin(// Default to I2C bus
+        MODE_I2C,
+        // Initialize magnetometer output data rate to 0.625 Hz (turn on device)
+        MAG_DO_40_Hz,
+        // Initialize magnetic field full scale to +/-16 gauss
+        MAG_FS_16_Ga,
+        // Enabling block data updating
+        MAG_BDU_ENABLE,
+        // Initialize magnetometer X/Y axes ouput data rate to high-perf mode
+        MAG_OMXY_HIGH_PERFORMANCE,
+        // Initialize magnetometer Z axis performance mode
+        MAG_OMZ_HIGH_PERFORMANCE,
+        // Initialize magnetometer run mode. Also enables I2C (bit 7 = 0)
+        MAG_MD_CONTINUOUS,
+        // Initialize acceleration full scale to +/-2g
+        ACC_FS_2g,
+        // Enable block data updating
+        ACC_BDU_ENABLE,
+        // Enable X, Y, and Z accelerometer axes
+        ACC_X_ENABLE|ACC_Y_ENABLE|ACC_Z_ENABLE,
+        // Initialize accelerometer output data rate to 100 Hz (turn on device)
+        ACC_ODR_100_Hz
+        );
+}
+
+status_t LSM303C::begin(interfaceMode_t im, MAG_DO_t modr, MAG_FS_t mfs,
+    MAG_BDU_t mbu, MAG_OMXY_t mxyodr, MAG_OMZ_t mzodr, MAG_MD_t mm,
+    ACC_FS_t afs, ACC_BDU_t abu, uint8_t aea, ACC_ODR_t aodr)
+{
   uint8_t successes = 0;
+  // Select I2C or SPI
+  interfaceMode = im;
+
+  if (interfaceMode == MODE_SPI)
+  {
+    debug_println("Setting up SPI");
+    // Setup pins for SPI
+    // CS & CLK must be outputs DDRxn = 1
+    bitSet(DIR_REG, CSBIT_MAG);
+    bitSet(DIR_REG, CSBIT_XL);
+    bitSet(DIR_REG, CLKBIT);
+    // Deselect SPI chips
+    bitSet(CSPORT_MAG, CSBIT_MAG);
+    bitSet(CSPORT_XL, CSBIT_XL);
+    // Clock polarity (CPOL) = 1
+    bitSet(CLKPORT, CLKBIT);
+    // SPI Serial Interface Mode (SIM) bits must be set
+    SPI_WriteByte(ACC, ACC_CTRL4, 0b11);
+    SPI_WriteByte(MAG, MAG_CTRL_REG3, _BV(2));
+  }
   ////////// Initialize Magnetometer //////////
-  // Initialize magnetometer output data rate to 0.625 Hz (turn on device)
-  successes += MAG_SetODR(MAG_DO_40_Hz);
-  // Initialize magnetic field full scale to +/-16 gauss
-  successes += MAG_SetFullScale(MAG_FS_16_Ga);
+  // Initialize magnetometer output data rate
+  successes += MAG_SetODR(modr);
+  // Initialize magnetic field full scale
+  successes += MAG_SetFullScale(mfs);
   // Enabling block data updating
-  successes += MAG_BlockDataUpdate(MAG_BDU_ENABLE);
-  // Initialize magnetometer X/Y axes ouput data rate to high-performance mode
-  successes += MAG_XY_AxOperativeMode(MAG_OMXY_HIGH_PERFORMANCE);
+  successes += MAG_BlockDataUpdate(mbu);
+  // Initialize magnetometer X/Y axes ouput data rate
+  successes += MAG_XY_AxOperativeMode(mxyodr);
   // Initialize magnetometer Z axis performance mode
-  successes += MAG_Z_AxOperativeMode(MAG_OMZ_HIGH_PERFORMANCE);
-  // Initialize magnetometer run mode. Also enables I2C (bit 7 = 0)
-  successes += MAG_SetMode(MAG_MD_CONTINUOUS);
+  successes += MAG_Z_AxOperativeMode(mzodr);
+  // Initialize magnetometer run mode.
+  successes += MAG_SetMode(mm);
 
   ////////// Initialize Accelerometer //////////
-  // Initialize acceleration full scale to +/-2g
-  successes += ACC_SetFullScale(ACC_FS_2g);
+  // Initialize acceleration full scale
+  successes += ACC_SetFullScale(afs);
   // Enable block data updating
-  successes += ACC_BlockDataUpdate(ACC_BDU_ENABLE);
+  successes += ACC_BlockDataUpdate(abu);
   // Enable X, Y, and Z accelerometer axes
-  successes += ACC_EnableAxis(ACC_X_ENABLE|ACC_Y_ENABLE|ACC_Z_ENABLE);
-  // Initialize accelerometer output data rate to 100 Hz (turn on device)
-  successes += ACC_SetODR(ACC_ODR_100_Hz);
+  successes += ACC_EnableAxis(aea);
+  // Initialize accelerometer output data rate
+  successes += ACC_SetODR(aodr);
 
   return (successes == IMU_SUCCESS) ? IMU_SUCCESS : IMU_HW_ERROR;
 }
@@ -66,10 +117,28 @@ float LSM303C::readAccelZ()
 
 float LSM303C::readTempC()
 {
-  uint16_t temperature;
+  uint8_t valueL;
+  uint8_t valueH;
+  float temperature;
+
+  // Make sure temperature sensor is enabled
   MAG_TemperatureEN(MAG_TEMP_EN_ENABLE);
-  MAG_GetTemperatureRaw(temperature);
-  return (float)temperature;
+
+	if( MAG_ReadReg(MAG_TEMP_OUT_L, valueL) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  if( MAG_ReadReg(MAG_TEMP_OUT_H, valueH) )
+  {
+    return IMU_HW_ERROR;
+  }
+
+  temperature = (float)( (valueH << 8) | valueL );
+  temperature /= 8; // 8 digits/˚C
+  temperature += 25;// Reads 0 @ 25˚C
+
+  return temperature;  
 }
 
 float LSM303C::readTempF()
@@ -77,6 +146,9 @@ float LSM303C::readTempF()
   return( (readTempC() * 9.0 / 5.0) + 32.0);
 }
 
+
+
+////////////////////////////////////////////////////////////////////////////////
 ////// Protected methods
 
 float LSM303C::readAccel(AXIS_t dir)
@@ -86,11 +158,13 @@ float LSM303C::readAccel(AXIS_t dir)
   
   if (response != IMU_SUCCESS)
   {
-    Serial.println("\nError: Accel isn't working!");
+    Serial.println("\nError: Acc isn't working!");
     return NAN;
   }
   
   // Check for new data in the status flags with a mask
+  // If there isn't new data use the last data read.
+  // There are valid cases for this, like reading faster than refresh rate.
   if (flag_ACC_STATUS_FLAGS & ACC_ZYX_NEW_DATA_AVAILABLE)
   {
     response = ACC_GetAccRaw(accelData);
@@ -155,29 +229,6 @@ float LSM303C::readMag(AXIS_t dir)
   return NAN;
 }
 
-status_t LSM303C::MAG_GetTemperatureRaw(uint16_t& buff)
-{
-  uint8_t valueL;
-  uint8_t valueH;
-
-  // temperature = (((int16_t) temp[1] << 12) | temp[0] << 4 ) >> 4;
-  // Temperature is a 12-bit signed integer
-	
-	if( MAG_ReadReg(MAG_TEMP_OUT_L, valueL) )
-  {
-    return IMU_HW_ERROR;
-  }
-
-  if( MAG_ReadReg(MAG_TEMP_OUT_H, valueH) )
-  {
-    return IMU_HW_ERROR;
-  }
-
-	buff = (int16_t)( (valueH << 8) | valueL );
-
-  return IMU_SUCCESS;  
-}
-
 status_t LSM303C::MAG_GetMagRaw(AxesRaw_t& buff)
 {
   debug_print(EMPTY);
@@ -232,6 +283,7 @@ status_t LSM303C::MAG_SetODR(MAG_DO_t val)
 
   if(MAG_ReadReg(MAG_CTRL_REG1, value))
   {
+    debug_printlns("Failed Read from MAG_CTRL_REG1");
     return IMU_HW_ERROR;
   }
 
@@ -377,6 +429,7 @@ status_t LSM303C::ACC_SetFullScale(ACC_FS_t val)
 
   if ( ACC_ReadReg(ACC_CTRL4, value) )
   {
+    debug_printlns("Failed ACC read");
     return IMU_HW_ERROR;
   }
 
@@ -488,8 +541,10 @@ status_t LSM303C::MAG_ReadReg(MAG_REG_t reg, uint8_t& data)
   else if (interfaceMode == MODE_SPI)
   {
     // TODO: fix this
-    //ret = SPIreadByte(gAddress, reg);
-    ret = IMU_NOT_SUPPORTED; // Not implemented yet
+    data = SPI_ReadByte(MAG, reg);
+    debug_print("SPI read: 0x");
+    debug_printlns(data, HEX);
+    ret = IMU_SUCCESS;
   }
   else
   {
@@ -510,9 +565,7 @@ uint8_t  LSM303C::MAG_WriteReg(MAG_REG_t reg, uint8_t data)
   }
   else if (interfaceMode == MODE_SPI)
   {
-    // TODO: fix this
-    //ret = SPIreadByte(gAddress, reg);
-    ret = IMU_NOT_SUPPORTED;
+    ret = SPI_WriteByte(MAG, reg, data);
   }
   else
   {
@@ -535,8 +588,10 @@ status_t LSM303C::ACC_ReadReg(ACC_REG_t reg, uint8_t& data)
   else if (interfaceMode == MODE_SPI)
   {
     // TODO: fix this
-    //ret = SPIreadByte(gAddress, reg);
-    ret = IMU_NOT_SUPPORTED;
+    data = SPI_ReadByte(ACC, reg);
+    debug_print("Read: 0x");
+    debug_printlns(data, HEX);
+    ret = IMU_SUCCESS;
   }
   else
   {
@@ -546,8 +601,13 @@ status_t LSM303C::ACC_ReadReg(ACC_REG_t reg, uint8_t& data)
   return ret;
 }
 
+
+
+
+
 uint8_t  LSM303C::ACC_WriteReg(ACC_REG_t reg, uint8_t data)
 {
+  debug_print(EMPTY);
   uint8_t ret;
     
   if (interfaceMode == MODE_I2C)
@@ -556,9 +616,7 @@ uint8_t  LSM303C::ACC_WriteReg(ACC_REG_t reg, uint8_t data)
   }
   else if (interfaceMode == MODE_SPI)
   {
-    // TODO: fix this
-    //ret = SPIreadByte(gAddress, reg);
-    ret = IMU_NOT_SUPPORTED;
+    ret = SPI_WriteByte(ACC, reg, data);
   }
   else
   {
@@ -567,6 +625,143 @@ uint8_t  LSM303C::ACC_WriteReg(ACC_REG_t reg, uint8_t data)
 
   return ret;
 }
+
+// This function uses bit manibulation for higher speed & smaller code
+uint8_t LSM303C::SPI_ReadByte(CHIP_t chip, uint8_t data)
+{
+  debug_print("Reading register 0x");
+  debug_printlns(data, HEX);
+  uint8_t counter;
+
+  // Set the read/write bit (bit 7) to do a read
+  data |= _BV(7);
+
+  // Set data pin to output
+  bitSet(DIR_REG, DATABIT);
+  //pinMode(10, OUTPUT);
+ 
+  // Select the chip & deselect the other
+  switch (chip)
+  {
+  case MAG:
+    bitClear(CSPORT_MAG, CSBIT_MAG);
+    bitSet(CSPORT_XL, CSBIT_XL);
+    break;
+  case ACC:
+    bitClear(CSPORT_XL, CSBIT_XL);
+    bitSet(CSPORT_MAG, CSBIT_MAG);
+    break;
+  }
+
+  // Shift out 8-bit address
+  for(counter = 8; counter; counter--)
+  {
+    bitWrite(DATAPORTO, DATABIT, data & 0x80);
+    // Data is setup, so drop clock edge
+    bitClear(CLKPORT, CLKBIT);
+    bitSet(CLKPORT, CLKBIT);
+    // Shift off sent bit
+    data <<= 1;
+  }
+  
+  // Switch data pin to input (0 = INPUT)
+  bitClear(DIR_REG, DATABIT);
+  //pinMode(10, INPUT);
+
+  // Shift in register data from address
+  for(counter = 8; counter; counter--)
+  {
+    // Shift data to the left.  Remains 0 after first shift
+    data <<= 1;
+
+    bitClear(CLKPORT, CLKBIT);
+    // Sample on rising egde
+    bitSet(CLKPORT, CLKBIT);
+    uint8_t dat = bitRead(DATAPORTI, DATABIT);
+    if (bitRead(DATAPORTI, DATABIT))
+    {
+      data |= 0x01;
+    }
+  }
+
+  // Unselect chip
+  switch (chip)
+  {
+  case MAG:
+    bitSet(CSPORT_MAG, CSBIT_MAG);
+    break;
+  case ACC:
+    bitSet(CSPORT_XL, CSBIT_XL);
+    break;
+  }
+debug_print("Read 0x");
+debug_printlns(data, HEX);
+
+  return(data);
+}
+
+
+
+
+
+// This function uses bit manibulation for higher speed & smaller code
+status_t LSM303C::SPI_WriteByte(CHIP_t chip, uint8_t reg, uint8_t data)
+{
+  debug_print("Writing 0x");
+  debug_prints(data, HEX);
+  debug_prints(" to register 0x");
+  debug_printlns(reg, HEX);
+  uint8_t counter;
+  uint16_t twoBytes;
+
+  // Clear the read/write bit (bit 7) to do a write
+  reg &= ~_BV(7);
+  twoBytes = reg << 8 | data;
+
+  // Set data pin to output
+  bitSet(DIR_REG, DATABIT);
+ 
+  // Select the chip & deselect the other
+  switch (chip)
+  {
+  case MAG:
+    bitClear(CSPORT_MAG, CSBIT_MAG);
+    bitSet(CSPORT_XL, CSBIT_XL);
+    break;
+  case ACC:
+    bitClear(CSPORT_XL, CSBIT_XL);
+    bitSet(CSPORT_MAG, CSBIT_MAG);
+    break;
+  }
+
+  // Shift out 8-bit address & 8-bit data
+  for(counter = 16; counter; counter--)
+  {
+    bitWrite(DATAPORT, DATABIT, twoBytes & 0x8000);
+    // Data is setup, so drop clock edge
+    bitClear(CLKPORT, CLKBIT);
+    bitSet(CLKPORT, CLKBIT);
+    // Shift off sent bit
+    twoBytes <<= 1;
+  }
+  
+  // Unselect chip
+  switch (chip)
+  {
+  case MAG:
+    bitSet(CSPORT_MAG, CSBIT_MAG);
+    break;
+  case ACC:
+    bitSet(CSPORT_XL, CSBIT_XL);
+    break;
+  }
+ 
+  // Is there a way to verify true success?
+  return IMU_SUCCESS;
+}
+
+
+
 
 uint8_t  LSM303C::I2C_ByteWrite(I2C_ADDR_t slaveAddress, uint8_t reg,
     uint8_t data)
@@ -696,7 +891,7 @@ status_t LSM303C::ACC_GetAccRaw(AxesRaw_t& buff)
   {
 	  return IMU_HW_ERROR;
   }
-  
+
   buff.zAxis = (int16_t)( (valueH << 8) | valueL ); 
 
   return IMU_SUCCESS;

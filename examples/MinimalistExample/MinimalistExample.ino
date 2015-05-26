@@ -1,16 +1,18 @@
+// I2C interface by default
+//
 #include "Wire.h"
 #include "SparkFunIMU.h"
 #include "SparkFunLSM303C.h"
 #include "LSM303CTypes.h"
 
-// #define DEBUG 1 in DebugMacros.h turns on debugging statements.
+// #define DEBUG 1 in SparkFunLSM303C.cpp turns on debugging statements.
 // Redefine to 0 to turn them off.
 
 LSM303C myIMU;
 
 void setup() {
 
-  Serial.begin(9600);
+  Serial.begin(250000);
   if (myIMU.begin() != IMU_SUCCESS)
   {
     Serial.println("Failed setup.");
