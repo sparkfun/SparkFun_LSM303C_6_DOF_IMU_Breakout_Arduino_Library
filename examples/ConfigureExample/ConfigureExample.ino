@@ -5,18 +5,28 @@
 #include "SparkFunLSM303C.h"
 #include "LSM303CTypes.h"
 
-// #define DEBUG 1 in SparkFunLSM303C.cpp turns on debugging statements.
-// Redefine to 0 to turn them off.
+/*
+ * define DEBUG 1 in SparkFunLSM303C.cpp turns on debugging statements.
+ * Redefine to 0 to turn them off.
+ */
+
+/*
+ * SPI pins defined in SparkFunLSM303C.h for Pro Mini
+ * D10 -> SDI/SDO
+ * D11 -> SCLK
+ * D12 -> CS_XL
+ * D13 -> CS_MAG
+ */
 
 LSM303C myIMU;
 
 void setup() {
-  Serial.begin(250000);
+  Serial.begin(115200);
 
   if (myIMU.begin(
                 ///// Interface mode options
-                  MODE_SPI,
-                  //MODE_I2C,
+                  //MODE_SPI,
+                  MODE_I2C,
 
                 ///// Magnetometer output data rate options
                   //MAG_DO_0_625_Hz,
@@ -94,7 +104,6 @@ void loop()
 {
   float value;
 
-  // Get all parameters
   value = myIMU.readAccelX();
 
   // Assume that if X is not activated then none are (poor assumption, but demo)

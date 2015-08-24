@@ -8,8 +8,12 @@
 #include "LSM303CTypes.h"
 #include "DebugMacros.h"
 
-#define SENSITIVITY_ACC     -0.06103515625      //LSB/mg
-#define SENSITIVITY_MAG      0.00048828125      //LSB/Ga
+#define SENSITIVITY_ACC   0.06103515625   // LSB/mg
+#define SENSITIVITY_MAG   0.00048828125   // LSB/Ga
+
+// Define a few error messages to save on space
+static const char AERROR[] = "\nAccel Error";
+static const char MERROR[] = "\nMag Error";
 
 // Define SPI pins (Pro Mini)
 //  D10 -> SDI/SDO
@@ -33,7 +37,6 @@ class LSM303C : public SparkFunIMU
 {
   public:
     // These are the only methods are the only methods the user can use w/o mods
-    //LSM303C();
     ~LSM303C()  =  default;
     status_t begin(void);
     // Begin contains hardware specific code (Pro Mini)

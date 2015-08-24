@@ -55,7 +55,7 @@ status_t LSM303C::begin(interfaceMode_t im, MAG_DO_t modr, MAG_FS_t mfs,
     // Clock polarity (CPOL) = 1
     bitSet(CLKPORT, CLKBIT);
     // SPI Serial Interface Mode (SIM) bits must be set
-    SPI_WriteByte(ACC, ACC_CTRL4, 0b11);
+    SPI_WriteByte(ACC, ACC_CTRL4, 0b111);
     SPI_WriteByte(MAG, MAG_CTRL_REG3, _BV(2));
   }
   ////////// Initialize Magnetometer //////////
@@ -100,20 +100,143 @@ float LSM303C::readMagZ()
   return readMag(zAxis);
 }
 
+/*
 float LSM303C::readAccelX()
 {
   return readAccel(xAxis);
 }
+*/
+
+float LSM303C::readAccelX()
+{
+  uint8_t flag_ACC_STATUS_FLAGS;
+  status_t response = ACC_Status_Flags(flag_ACC_STATUS_FLAGS);
+  
+  if (response != IMU_SUCCESS)
+  {
+    Serial.println(AERROR);
+    return NAN;
+  }
+  
+  // Check for new data in the status flags with a mask
+  // If there isn't new data use the last data read.
+  // There are valid cases for this, like reading faster than refresh rate.
+  if (flag_ACC_STATUS_FLAGS & ACC_X_NEW_DATA_AVAILABLE)
+  {
+    uint8_t valueL;
+    uint8_t valueH;
+
+    if ( ACC_ReadReg(ACC_OUT_X_H, valueH) )
+    {
+	    return IMU_HW_ERROR;
+    }
+  
+    if ( ACC_ReadReg(ACC_OUT_X_L, valueL) )
+    {
+	    return IMU_HW_ERROR;
+    }
+  
+    debug_println("Fresh raw data");
+
+    //convert from LSB to mg
+    return int16_t(( (valueH << 8) | valueL )) * SENSITIVITY_ACC;
+  }
+
+  // Should never get here
+  debug_println("Returning NAN");
+  return NAN;
+}
 
 float LSM303C::readAccelY()
 {
-  return readAccel(yAxis);
+  uint8_t flag_ACC_STATUS_FLAGS;
+  status_t response = ACC_Status_Flags(flag_ACC_STATUS_FLAGS);
+  
+  if (response != IMU_SUCCESS)
+  {
+    Serial.println(AERROR);
+    return NAN;
+  }
+  
+  // Check for new data in the status flags with a mask
+  // If there isn't new data use the last data read.
+  // There are valid cases for this, like reading faster than refresh rate.
+  if (flag_ACC_STATUS_FLAGS & ACC_Y_NEW_DATA_AVAILABLE)
+  {
+    uint8_t valueL;
+    uint8_t valueH;
+
+    if ( ACC_ReadReg(ACC_OUT_Y_H, valueH) )
+    {
+	    return IMU_HW_ERROR;
+    }
+  
+    if ( ACC_ReadReg(ACC_OUT_Y_L, valueL) )
+    {
+	    return IMU_HW_ERROR;
+    }
+  
+    debug_println("Fresh raw data");
+
+    //convert from LSB to mg
+    return int16_t(( (valueH << 8) | valueL )) * SENSITIVITY_ACC;
+  }
+
+  // Should never get here
+  debug_println("Returning NAN");
+  return NAN;
+
+  //return readAccel(yAxis);
 }
 
+/*
 float LSM303C::readAccelZ()
 {
   return readAccel(zAxis);
 }
+*/
+float LSM303C::readAccelZ()
+{
+  uint8_t flag_ACC_STATUS_FLAGS;
+  status_t response = ACC_Status_Flags(flag_ACC_STATUS_FLAGS);
+  
+  if (response != IMU_SUCCESS)
+  {
+    Serial.println(AERROR);
+    return NAN;
+  }
+  
+  // Check for new data in the status flags with a mask
+  // If there isn't new data use the last data read.
+  // There are valid cases for this, like reading faster than refresh rate.
+  if (flag_ACC_STATUS_FLAGS & ACC_Z_NEW_DATA_AVAILABLE)
+  {
+    uint8_t valueL;
+    uint8_t valueH;
+
+    if ( ACC_ReadReg(ACC_OUT_Z_H, valueH) )
+    {
+	    return IMU_HW_ERROR;
+    }
+  
+    if ( ACC_ReadReg(ACC_OUT_Z_L, valueL) )
+    {
+	    return IMU_HW_ERROR;
+    }
+  
+    debug_println("Fresh raw data");
+
+    //convert from LSB to mg
+    return(int16_t(( (valueH << 8) | valueL )) * SENSITIVITY_ACC);
+  }
+
+  // Should never get here
+  debug_println("Returning NAN");
+  return NAN;
+
+  //return readAccel(yAxis);
+}
+
 
 float LSM303C::readTempC()
 {
@@ -122,16 +245,20 @@ float LSM303C::readTempC()
   float temperature;
 
   // Make sure temperature sensor is enabled
-  MAG_TemperatureEN(MAG_TEMP_EN_ENABLE);
+  if( MAG_TemperatureEN(MAG_TEMP_EN_ENABLE))
+  {
+    return NAN;
+  }
 
 	if( MAG_ReadReg(MAG_TEMP_OUT_L, valueL) )
   {
-    return IMU_HW_ERROR;
+    return NAN;
   }
 
   if( MAG_ReadReg(MAG_TEMP_OUT_H, valueH) )
   {
-    return IMU_HW_ERROR;
+    return NAN;
+    //return IMU_HW_ERROR;
   }
 
   temperature = (float)( (valueH << 8) | valueL );
@@ -158,7 +285,7 @@ float LSM303C::readAccel(AXIS_t dir)
   
   if (response != IMU_SUCCESS)
   {
-    Serial.println("\nError: Acc isn't working!");
+    Serial.println(AERROR);
     return NAN;
   }
   
@@ -198,7 +325,7 @@ float LSM303C::readMag(AXIS_t dir)
   
   if (response != IMU_SUCCESS)
   {
-    Serial.println("\nError: Magnetometer isn't working!!!");
+    Serial.println(MERROR);
     return NAN;
   }
   
@@ -344,8 +471,6 @@ status_t LSM303C::MAG_BlockDataUpdate(MAG_BDU_t val)
 
 status_t LSM303C::MAG_XYZ_AxDataAvailable(MAG_XYZDA_t& value)
 {
-  //uint8_t tmp = value;
-  //if ( MAG_ReadReg(MAG_STATUS_REG, tmp) )
   if ( MAG_ReadReg(MAG_STATUS_REG, (uint8_t&)value) )
   {
     return IMU_HW_ERROR;
@@ -473,6 +598,7 @@ status_t LSM303C::ACC_EnableAxis(uint8_t val)
 
   if ( ACC_ReadReg(ACC_CTRL1, value) )
   {
+    Serial.println(AERROR);
     return IMU_HW_ERROR;
   }
 
@@ -485,7 +611,6 @@ status_t LSM303C::ACC_EnableAxis(uint8_t val)
   }
 
   return IMU_SUCCESS;
-
 }
 
 status_t LSM303C::ACC_SetODR(ACC_ODR_t val)
@@ -540,10 +665,7 @@ status_t LSM303C::MAG_ReadReg(MAG_REG_t reg, uint8_t& data)
   }
   else if (interfaceMode == MODE_SPI)
   {
-    // TODO: fix this
     data = SPI_ReadByte(MAG, reg);
-    debug_print("SPI read: 0x");
-    debug_printlns(data, HEX);
     ret = IMU_SUCCESS;
   }
   else
@@ -587,10 +709,7 @@ status_t LSM303C::ACC_ReadReg(ACC_REG_t reg, uint8_t& data)
   }
   else if (interfaceMode == MODE_SPI)
   {
-    // TODO: fix this
     data = SPI_ReadByte(ACC, reg);
-    debug_print("Read: 0x");
-    debug_printlns(data, HEX);
     ret = IMU_SUCCESS;
   }
   else
@@ -638,8 +757,9 @@ uint8_t LSM303C::SPI_ReadByte(CHIP_t chip, uint8_t data)
 
   // Set data pin to output
   bitSet(DIR_REG, DATABIT);
-  //pinMode(10, OUTPUT);
  
+  noInterrupts();
+
   // Select the chip & deselect the other
   switch (chip)
   {
@@ -666,7 +786,6 @@ uint8_t LSM303C::SPI_ReadByte(CHIP_t chip, uint8_t data)
   
   // Switch data pin to input (0 = INPUT)
   bitClear(DIR_REG, DATABIT);
-  //pinMode(10, INPUT);
 
   // Shift in register data from address
   for(counter = 8; counter; counter--)
@@ -677,7 +796,6 @@ uint8_t LSM303C::SPI_ReadByte(CHIP_t chip, uint8_t data)
     bitClear(CLKPORT, CLKBIT);
     // Sample on rising egde
     bitSet(CLKPORT, CLKBIT);
-    uint8_t dat = bitRead(DATAPORTI, DATABIT);
     if (bitRead(DATAPORTI, DATABIT))
     {
       data |= 0x01;
@@ -694,8 +812,8 @@ uint8_t LSM303C::SPI_ReadByte(CHIP_t chip, uint8_t data)
     bitSet(CSPORT_XL, CSBIT_XL);
     break;
   }
-debug_print("Read 0x");
-debug_printlns(data, HEX);
+
+  interrupts();
 
   return(data);
 }
@@ -711,6 +829,7 @@ status_t LSM303C::SPI_WriteByte(CHIP_t chip, uint8_t reg, uint8_t data)
   debug_prints(data, HEX);
   debug_prints(" to register 0x");
   debug_printlns(reg, HEX);
+
   uint8_t counter;
   uint16_t twoBytes;
 
@@ -721,6 +840,8 @@ status_t LSM303C::SPI_WriteByte(CHIP_t chip, uint8_t reg, uint8_t data)
   // Set data pin to output
   bitSet(DIR_REG, DATABIT);
  
+  noInterrupts();
+
   // Select the chip & deselect the other
   switch (chip)
   {
@@ -738,6 +859,7 @@ status_t LSM303C::SPI_WriteByte(CHIP_t chip, uint8_t reg, uint8_t data)
   for(counter = 16; counter; counter--)
   {
     bitWrite(DATAPORT, DATABIT, twoBytes & 0x8000);
+    
     // Data is setup, so drop clock edge
     bitClear(CLKPORT, CLKBIT);
     bitSet(CLKPORT, CLKBIT);
@@ -756,6 +878,11 @@ status_t LSM303C::SPI_WriteByte(CHIP_t chip, uint8_t reg, uint8_t data)
     break;
   }
  
+  interrupts();
+
+  // Set data pin to input
+  bitClear(DIR_REG, DATABIT);
+
   // Is there a way to verify true success?
   return IMU_SUCCESS;
 }
@@ -847,6 +974,7 @@ status_t LSM303C::ACC_Status_Flags(uint8_t& val)
   debug_println("Getting accel status");
   if( ACC_ReadReg(ACC_STATUS, val) )
   {
+    Serial.println(AERROR);
     return IMU_HW_ERROR;
   }
 
