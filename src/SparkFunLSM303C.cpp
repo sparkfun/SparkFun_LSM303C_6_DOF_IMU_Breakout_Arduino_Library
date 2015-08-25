@@ -858,7 +858,7 @@ status_t LSM303C::SPI_WriteByte(CHIP_t chip, uint8_t reg, uint8_t data)
   // Shift out 8-bit address & 8-bit data
   for(counter = 16; counter; counter--)
   {
-    bitWrite(DATAPORT, DATABIT, twoBytes & 0x8000);
+    bitWrite(DATAPORTO, DATABIT, twoBytes & 0x8000);
     
     // Data is setup, so drop clock edge
     bitClear(CLKPORT, CLKBIT);
