@@ -1,4 +1,5 @@
 // Data types used by the SparkFun LSM303C driver
+// Heavily based on code from ST
 #ifndef __LSM303C_TYPES_H__
 #define __LSM303C_TYPES_H__
 

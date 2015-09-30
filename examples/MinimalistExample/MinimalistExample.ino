@@ -10,24 +10,14 @@
 
 LSM303C myIMU;
 
-void setup() {
-
-  Serial.begin(250000);
+void setup()
+{
+  Serial.begin(115200);
   if (myIMU.begin() != IMU_SUCCESS)
   {
     Serial.println("Failed setup.");
     while(1);
   }
-// TODO
-uint8_t data;
-for (int i = 0x0F; i <= 0x3F; i++) {
-  Serial.print("Register 0x");
-  Serial.print(i, HEX);
-  Serial.print(" read: 0x");
-  myIMU.I2C_ByteRead(ACC_I2C_ADDR, i, data);
-  Serial.println(data, HEX);
-} // End test
-
 }
 
 void loop()

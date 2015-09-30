@@ -3,7 +3,6 @@
 #define __SPARKFUN_LSM303C_H__
 
 #include "Wire.h"
-#include "threeWireSPI.h"
 #include "SparkFunIMU.h"
 #include "LSM303CTypes.h"
 #include "DebugMacros.h"
