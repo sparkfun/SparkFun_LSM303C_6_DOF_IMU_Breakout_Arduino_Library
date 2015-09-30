@@ -114,7 +114,7 @@ float LSM303C::readAccelX()
   
   if (response != IMU_SUCCESS)
   {
-    Serial.println(AERROR);
+    debug_println(AERROR);
     return NAN;
   }
   
@@ -154,7 +154,7 @@ float LSM303C::readAccelY()
   
   if (response != IMU_SUCCESS)
   {
-    Serial.println(AERROR);
+    debug_println(AERROR);
     return NAN;
   }
   
@@ -202,7 +202,7 @@ float LSM303C::readAccelZ()
   
   if (response != IMU_SUCCESS)
   {
-    Serial.println(AERROR);
+    debug_println(AERROR);
     return NAN;
   }
   
@@ -285,7 +285,7 @@ float LSM303C::readAccel(AXIS_t dir)
   
   if (response != IMU_SUCCESS)
   {
-    Serial.println(AERROR);
+    debug_println(AERROR);
     return NAN;
   }
   
@@ -325,7 +325,7 @@ float LSM303C::readMag(AXIS_t dir)
   
   if (response != IMU_SUCCESS)
   {
-    Serial.println(MERROR);
+    debug_println(MERROR);
     return NAN;
   }
   
@@ -598,7 +598,7 @@ status_t LSM303C::ACC_EnableAxis(uint8_t val)
 
   if ( ACC_ReadReg(ACC_CTRL1, value) )
   {
-    Serial.println(AERROR);
+    debug_println(AERROR);
     return IMU_HW_ERROR;
   }
 
@@ -974,7 +974,7 @@ status_t LSM303C::ACC_Status_Flags(uint8_t& val)
   debug_println("Getting accel status");
   if( ACC_ReadReg(ACC_STATUS, val) )
   {
-    Serial.println(AERROR);
+    debug_println(AERROR);
     return IMU_HW_ERROR;
   }
 
