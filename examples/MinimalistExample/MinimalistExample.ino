@@ -5,7 +5,7 @@
 #include "SparkFunLSM303C.h"
 #include "LSM303CTypes.h"
 
-// #define DEBUG 1 in SparkFunLSM303C.cpp turns on debugging statements.
+// #define DEBUG 1 in SparkFunLSM303C.h turns on debugging statements.
 // Redefine to 0 to turn them off.
 
 LSM303C myIMU;

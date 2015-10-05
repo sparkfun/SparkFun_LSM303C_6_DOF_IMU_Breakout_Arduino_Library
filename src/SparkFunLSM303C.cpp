@@ -1,8 +1,6 @@
 #include "SparkFunLSM303C.h"
 #include "stdint.h"
 
-#define DEBUG 0
-
 // Public methods
 status_t LSM303C::begin()
 {
@@ -100,13 +98,6 @@ float LSM303C::readMagZ()
   return readMag(zAxis);
 }
 
-/*
-float LSM303C::readAccelX()
-{
-  return readAccel(xAxis);
-}
-*/
-
 float LSM303C::readAccelX()
 {
   uint8_t flag_ACC_STATUS_FLAGS;
@@ -185,16 +176,8 @@ float LSM303C::readAccelY()
   // Should never get here
   debug_println("Returning NAN");
   return NAN;
-
-  //return readAccel(yAxis);
 }
 
-/*
-float LSM303C::readAccelZ()
-{
-  return readAccel(zAxis);
-}
-*/
 float LSM303C::readAccelZ()
 {
   uint8_t flag_ACC_STATUS_FLAGS;
@@ -233,8 +216,6 @@ float LSM303C::readAccelZ()
   // Should never get here
   debug_println("Returning NAN");
   return NAN;
-
-  //return readAccel(yAxis);
 }
 
 
@@ -258,7 +239,6 @@ float LSM303C::readTempC()
   if( MAG_ReadReg(MAG_TEMP_OUT_H, valueH) )
   {
     return NAN;
-    //return IMU_HW_ERROR;
   }
 
   temperature = (float)( (valueH << 8) | valueL );

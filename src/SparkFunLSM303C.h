@@ -10,6 +10,8 @@
 #define SENSITIVITY_ACC   0.06103515625   // LSB/mg
 #define SENSITIVITY_MAG   0.00048828125   // LSB/Ga
 
+#define DEBUG 0 // Change to 1 (nonzero) to enable debug messages
+
 // Define a few error messages to save on space
 static const char AERROR[] = "\nAccel Error";
 static const char MERROR[] = "\nMag Error";
