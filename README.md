@@ -38,7 +38,7 @@ Products that use this Library
 Version History
 ---------------
 
-* [V 1.0.0](https://github.com/sparkfun/SparkFun_LSM303C_6_DOF_IMU_Arduino_Library/releases/tag/V_1.0.0) -- Initial commit of Arduino 1.5+ compatible library.
+* [V 1.0.0](https://github.com/sparkfun/SparkFun_LSM303C_6_DOF_IMU_Breakout_Arduino_Library/releases/tag/V_1.0.0) -- Initial commit of Arduino 1.5+ compatible library.
 
 SparkFun IMU Interface
 ---
