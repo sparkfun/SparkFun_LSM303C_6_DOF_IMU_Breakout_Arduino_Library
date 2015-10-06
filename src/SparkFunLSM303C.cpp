@@ -31,7 +31,7 @@ status_t LSM303C::begin()
         );
 }
 
-status_t LSM303C::begin(interfaceMode_t im, MAG_DO_t modr, MAG_FS_t mfs,
+status_t LSM303C::begin(InterfaceMode_t im, MAG_DO_t modr, MAG_FS_t mfs,
     MAG_BDU_t mbu, MAG_OMXY_t mxyodr, MAG_OMZ_t mzodr, MAG_MD_t mm,
     ACC_FS_t afs, ACC_BDU_t abu, uint8_t aea, ACC_ODR_t aodr)
 {

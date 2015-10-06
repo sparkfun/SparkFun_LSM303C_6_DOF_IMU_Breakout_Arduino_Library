@@ -41,7 +41,7 @@ class LSM303C : public SparkFunIMU
     ~LSM303C()  =  default;
     status_t begin(void);
     // Begin contains hardware specific code (Pro Mini)
-    status_t begin(interfaceMode_t, MAG_DO_t, MAG_FS_t, MAG_BDU_t, MAG_OMXY_t,
+    status_t begin(InterfaceMode_t, MAG_DO_t, MAG_FS_t, MAG_BDU_t, MAG_OMXY_t,
        MAG_OMZ_t, MAG_MD_t, ACC_FS_t, ACC_BDU_t, uint8_t, ACC_ODR_t);
     float readAccelX(void);
     float readAccelY(void);
@@ -59,7 +59,7 @@ class LSM303C : public SparkFunIMU
 
     // The LSM303C functions over both I2C or SPI. This library supports both.
     // Interface mode used must be set!
-    interfaceMode_t interfaceMode = MODE_I2C;  // Set a default...
+    InterfaceMode_t interfaceMode = MODE_I2C;  // Set a default...
 
     // Hardware abstraction functions (Pro Mini)
     uint8_t  SPI_ReadByte(CHIP_t, uint8_t);

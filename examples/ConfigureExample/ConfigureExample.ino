@@ -34,7 +34,7 @@ void setup() {
                   //MAG_DO_2_5_Hz,
                   //MAG_DO_5_Hz,
                   //MAG_DO_10_Hz,
-                  //MAG_DO_20_hZ,
+                  //MAG_DO_20_Hz,
                   MAG_DO_40_Hz,
                   //MAG_DO_80_Hz,
 

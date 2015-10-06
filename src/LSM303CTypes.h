@@ -102,7 +102,7 @@ typedef enum
 {
   MODE_SPI,
   MODE_I2C,
-} interfaceMode_t;
+} InterfaceMode_t;
 
 typedef enum
 {
@@ -124,7 +124,7 @@ typedef enum
   MAG_DO_2_5_Hz   = 0x08,
   MAG_DO_5_Hz     = 0x0C,
   MAG_DO_10_Hz    = 0x10,
-  MAG_DO_20_hZ    = 0x14,
+  MAG_DO_20_Hz    = 0x14,
   MAG_DO_40_Hz    = 0x18,
   MAG_DO_80_Hz    = 0x1C
 } MAG_DO_t;
