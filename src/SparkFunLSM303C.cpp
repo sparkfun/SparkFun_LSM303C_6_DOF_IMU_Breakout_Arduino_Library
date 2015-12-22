@@ -56,6 +56,11 @@ status_t LSM303C::begin(InterfaceMode_t im, MAG_DO_t modr, MAG_FS_t mfs,
     SPI_WriteByte(ACC, ACC_CTRL4, 0b111);
     SPI_WriteByte(MAG, MAG_CTRL_REG3, _BV(2));
   }
+  else
+  {
+    Wire.begin();
+    Wire.setClock(400000L);
+  }
   ////////// Initialize Magnetometer //////////
   // Initialize magnetometer output data rate
   successes += MAG_SetODR(modr);
