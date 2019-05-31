@@ -1,7 +1,7 @@
 SparkFun LSM303C 6 DOF IMU Arduino Library
 ========================================
 
-![LSM303C Breakout](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/4/1/8/LSM303C_BOB.jpg)
+![LSM303C Breakout](https://cdn.sparkfun.com//assets/parts/1/0/5/6/4/13303-01.jpg)
 
 [*LSM303C Breakout (BOB-13303)*](https://www.sparkfun.com/products/13303)
 
