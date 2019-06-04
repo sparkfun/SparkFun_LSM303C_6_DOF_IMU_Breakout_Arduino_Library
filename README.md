@@ -28,7 +28,7 @@ Documentation
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 * **[Product Repository](https://github.com/sparkfun/LSM303C_6_DOF_IMU_Breakout)** - Main repository (including hardware files) for the LSM6DS3 Breakout.
-* **[Hookup Guide](https://learn.sparkfun.com/tutorials/lsm303c-hookup-guide)** - Basic hookup guide for the LSM303C Breakout.
+* **[Hookup Guide](https://learn.sparkfun.com/tutorials/lsm303c-6dof-hookup-guide)** - Basic hookup guide for the LSM303C Breakout.
 
 Products that use this Library
 ---------------------------------
