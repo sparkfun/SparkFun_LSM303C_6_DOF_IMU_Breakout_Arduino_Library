@@ -10,13 +10,17 @@
 
 LSM303C myIMU;
 
-void setup()
-{
-  Serial.begin(115200);
+void setup() {
+
+  Wire.begin();//set up I2C bus, comment out if using SPI mode
+  Wire.setClock(400000L);//clock stretching, comment out if using SPI mode
+
+  Serial.begin(57600);//initialize serial monitor, maximum reliable baud for 3.3V/8Mhz ATmega328P is 57600
+
   if (myIMU.begin() != IMU_SUCCESS)
   {
     Serial.println("Failed setup.");
-    while(1);
+    while (1);
   }
 }
 
@@ -53,6 +57,6 @@ void loop()
   Serial.println(myIMU.readTempC(), 4);
   Serial.print(" Degrees F = ");
   Serial.println(myIMU.readTempF(), 4);
-  
-  delay(1000);
+
+  delay(1000);//slow down output to make it easier to read, adjust as necessary
 }

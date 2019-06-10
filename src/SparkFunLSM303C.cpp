@@ -58,8 +58,8 @@ status_t LSM303C::begin(InterfaceMode_t im, MAG_DO_t modr, MAG_FS_t mfs,
   }
   else
   {
-    Wire.begin();
-    Wire.setClock(400000L);
+    //I2C Mode
+    //initialize I2C bus and clock stretch in the setup()
   }
   ////////// Initialize Magnetometer //////////
   // Initialize magnetometer output data rate
